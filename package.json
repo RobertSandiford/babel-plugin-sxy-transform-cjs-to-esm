@@ -1,0 +1,22 @@
+{
+  "name": "babel-plugin-sxy-transform-cjs-to-esm",
+  "version": "0.1.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "nodemon test.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/core": "7.0.0",
+    "@babel/plugin-syntax-decorators": "^7.17.0",
+    "eslint": "^7.32.0",
+    "eslint-config-sandi-cjs": "^0.2.1",
+    "nodemon": "^2.0.20"
+  },
+  "dependencies": {
+    "cjs-module-lexer": "^1.2.2"
+  }
+}

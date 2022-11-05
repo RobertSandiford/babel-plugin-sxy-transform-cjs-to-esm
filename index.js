@@ -61,9 +61,16 @@ module.exports = function MakeBabelTransformDependencyImports(/*opts: Opts*/) {
         let addFilenameAndDirname
         let addCreateRequire
         return {
-            pre() {
+            pre(state) {
                 addFilenameAndDirname = false
                 addCreateRequire = false
+
+                // grab the whole file contents
+                const body = state.ast.program.body
+                // add a block statement containing a copy of this content at the start of the body
+                state.path.unshiftContainer('body', t.BlockStatement([...body]))
+                 /// truncate the body to 1 item, removing the original content
+                body.length = 1
             },
             visitor: {
                 CallExpression(path) {

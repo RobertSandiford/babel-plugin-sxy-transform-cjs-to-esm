@@ -65,12 +65,16 @@ module.exports = function MakeBabelTransformDependencyImports(/*opts: Opts*/) {
                 addFilenameAndDirname = false
                 addCreateRequire = false
 
-                // grab the whole file contents
+                // wrap everything in a scoping code block to prevent naming conficts when exporting at the end
                 const body = state.ast.program.body
-                // add a block statement containing a copy of this content at the start of the body
-                state.path.unshiftContainer('body', t.BlockStatement([...body]))
-                 /// truncate the body to 1 item, removing the original content
-                body.length = 1
+                state.ast.program.body = [t.BlockStatement([...body])]
+
+                // // grab the whole file contents
+                // const body = state.ast.program.body
+                // // add a block statement containing a copy of this content at the start of the body
+                // state.path.unshiftContainer('body', t.BlockStatement([...body]))
+                //  /// truncate the body to 1 item, removing the original content
+                // body.length = 1
             },
             visitor: {
                 CallExpression(path) {
@@ -114,6 +118,7 @@ module.exports = function MakeBabelTransformDependencyImports(/*opts: Opts*/) {
                 const names = getExportNamesFromCode(state.code, state.opts.filename)
 
                 for (const name of names) {
+                    if (name === 'default') continue /// cannot export named variables called default - this is reserved for the default export
                     const namedExport = t.ExportNamedDeclaration(
                         t.VariableDeclaration(
                             'const',

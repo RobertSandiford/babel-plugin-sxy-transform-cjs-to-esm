@@ -50,13 +50,6 @@ function getExportNamesFromCode(code, filename) {
     return Object.keys(combinedExports)
 }
 
-function varNameForImport(source) {
-    return source.split('/').pop()
-    // remove invalid chars
-    // deal with names starting with numbers
-    // deal with naming duplication
-}
-
 module.exports = function MakeBabelTransformDependencyImports(/*opts: Opts*/) {
     return function BabelTransformDependencyImports(babel) {
         const t = babel.types
@@ -65,16 +58,10 @@ module.exports = function MakeBabelTransformDependencyImports(/*opts: Opts*/) {
         const exportsStart = babel.parse(exportsStartCode).program.body
         const exportsEnd = babel.parse(exportsEndCode).program.body
         
-        let identifiers
-        let imports
-        let importNum
         let addFilenameAndDirname
         let addCreateRequire
         return {
             pre(state) {
-                identifiers = {}
-                imports = []
-                importNum = 0
                 addFilenameAndDirname = false
                 addCreateRequire = false
 
@@ -93,27 +80,17 @@ module.exports = function MakeBabelTransformDependencyImports(/*opts: Opts*/) {
                 CallExpression(path) {
                     const callee = path.node.callee
                     if (callee.type === 'Identifier' && callee.name === 'require') {
-                        imports.push(path.node.arguments)
-                        //const newEx = t.AwaitExpression(
-                        //    t.CallExpression(
-                        //        t.Import(),
-                        //        path.node.arguments
-                        //    )
-                        //)
-                        const newEx = t.MemberExpression(
-                            t.Identifier('__sxy_cjs_to_esm_imports'),
-                            t.NumericLiteral(importNum), // pretty hard to read output code
-                            true
+                        const newEx = t.AwaitExpression(
+                            t.CallExpression(
+                                t.Import(),
+                                path.node.arguments
+                            )
                         )
                         path.replaceWith(newEx)
-                        importNum++
-                        // do we wanna cache???
-                      
                         //
                     }
                 },
                 Identifier(path) {
-                    identifiers[path.node.name] = true
                     if (path.node.name === '__filename' || path.node.name === '__dirname') {
                         addFilenameAndDirname = true
                     }
@@ -129,47 +106,6 @@ module.exports = function MakeBabelTransformDependencyImports(/*opts: Opts*/) {
                 }
             },
             post(state) {
-              
-                //console.log('imports', imports)
-                //console.log('identifiers', identifiers)
-              
-                const importsStatement = t.VariableDeclaration(
-                    'const',
-                    [t.VariableDeclarator(
-                        t.Identifier('__sxy_cjs_to_esm_imports'),
-                        t.AwaitExpression(
-                            t.CallExpression(
-                                t.MemberExpression(
-                                    t.Identifier('Promise'),
-                                    t.Identifier('all')
-                                ),
-                                [t.ArrayExpression(imports.map( imp =>
-                                    t.AwaitExpression(
-                                        t.CallExpression(
-                                            t.Import(),
-                                            [imp[0]]
-                                        )
-                                    )
-                                ))]
-                            )
-                        )
-                    )],
-                )
-                
-              
-                
-                state.path.unshiftContainer('body', importsStatement)
-                
-                //for (const imp of imports) {
-                //  	const importDeclaration = t.ImportDeclaration(
-                //        [t.ImportDefaultSpecifier(
-                //            t.Identifier(varNameForImport(imp[0].value))
-                //        )],
-               //        imp[0]
-                //    )
-                 //   state.path.unshiftContainer('body', importDeclaration)
-                //}
-              
                 // reverse the order, because we are unshifting 
                 if (addCreateRequire) {
                     state.path.unshiftContainer('body', createRequire)

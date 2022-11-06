@@ -1,4 +1,7 @@
 
+//// how do we know if an 
+
+
 const { readFileSync } = require('fs')
 const mm = require('module')
 const { parse } = require('cjs-module-lexer')
@@ -147,7 +150,11 @@ module.exports = function MakeBabelTransformDependencyImports(/*opts: Opts*/) {
                                 ),
                                 [t.ArrayExpression(imports.map( imp => {
                                     let source = imp[0].value
-                                    if ( ! /(.js|.cjs|.mjs|.json)$/.test(source)) {
+                                    if ( // danger: death by regex
+                                        source.includes('/')
+                                        && ! /^@[^/]+\/[^/]+$/.test(source)
+                                        && ! /(.js|.cjs|.mjs|.json)$/.test(source)
+                                    ) {
                                         if (source.split('/').pop().includes('.')) {
                                             console.log(`babel-plugin-sxy-transform-cjs-to-esm warning:`
                                                 + ` require location ${source} file contains a dot, but we did not`

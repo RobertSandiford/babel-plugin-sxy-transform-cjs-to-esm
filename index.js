@@ -20,6 +20,8 @@ let module = { exports };`
 const exportsEndCode =
 `export default module.exports;`
 
+
+
 const exportNamesFromFileCache = {}
 function getExportNamesFromFile(file) {
     const cache = exportNamesFromFileCache
@@ -143,14 +145,23 @@ module.exports = function MakeBabelTransformDependencyImports(/*opts: Opts*/) {
                                     t.Identifier('Promise'),
                                     t.Identifier('all')
                                 ),
-                                [t.ArrayExpression(imports.map( imp =>
-                                    t.AwaitExpression(
+                                [t.ArrayExpression(imports.map( imp => {
+                                    let source = imp[0].value
+                                    if ( ! /(.js|.cjs|.mjs|.json)$/.test(source)) {
+                                        if (source.split('/').pop().includes('.')) {
+                                            console.log(`babel-plugin-sxy-transform-cjs-to-esm warning:`
+                                                + ` require location ${source} file contains a dot, but we did not`
+                                                + ` recognise the extension. Adding .js`)
+                                        }
+                                        source += '.js'
+                                    }
+                                    return t.AwaitExpression(
                                         t.CallExpression(
                                             t.Import(),
-                                            [imp[0]]
+                                            [t.StringLiteral(source)]
                                         )
                                     )
-                                ))]
+                                }))]
                             )
                         )
                     )],

@@ -62,22 +62,22 @@ function varNameForImport(source) {
     // deal with naming duplication
 }
 
-module.exports = function MakeBabelTransformDependencyImports(/*opts: Opts*/) {
-    return function BabelTransformDependencyImports(babel) {
+module.exports = function MakeBabelTransformCjsToEsm(/*opts: Opts*/) {
+    return function BabelTransformCjsToEsm(babel) {
         const t = babel.types
         const createRequire = babel.parse(createRequireCode).program.body
         const filenameAndDirname = babel.parse(filenameAndDirnameCode).program.body
         const exportsStart = babel.parse(exportsStartCode).program.body
         const exportsEnd = babel.parse(exportsEndCode).program.body
         
-        let identifiers
+        //let identifiers
         let imports
         let importNum
         let addFilenameAndDirname
         let addCreateRequire
         return {
             pre(state) {
-                identifiers = {}
+                //identifiers = {}
                 imports = []
                 importNum = 0
                 addFilenameAndDirname = false
@@ -118,7 +118,7 @@ module.exports = function MakeBabelTransformDependencyImports(/*opts: Opts*/) {
                     }
                 },
                 Identifier(path) {
-                    identifiers[path.node.name] = true
+                    //identifiers[path.node.name] = true
                     if (path.node.name === '__filename' || path.node.name === '__dirname') {
                         addFilenameAndDirname = true
                     }
@@ -135,9 +135,6 @@ module.exports = function MakeBabelTransformDependencyImports(/*opts: Opts*/) {
             },
             post(state) {
               
-                //console.log('imports', imports)
-                //console.log('identifiers', identifiers)
-              
                 const importsStatement = t.VariableDeclaration(
                     'const',
                     [t.VariableDeclarator(
@@ -150,18 +147,20 @@ module.exports = function MakeBabelTransformDependencyImports(/*opts: Opts*/) {
                                 ),
                                 [t.ArrayExpression(imports.map( imp => {
                                     let source = imp[0].value
-                                    if ( // danger: death by regex
-                                        source.includes('/')
-                                        && ! /^@[^/]+\/[^/]+$/.test(source)
-                                        && ! /(.js|.cjs|.mjs|.json)$/.test(source)
-                                    ) {
-                                        if (source.split('/').pop().includes('.')) {
-                                            console.log(`babel-plugin-sxy-transform-cjs-to-esm warning:`
-                                                + ` require location ${source} file contains a dot, but we did not`
-                                                + ` recognise the extension. Adding .js`)
-                                        }
-                                        source += '.js'
-                                    }
+                                    //// We don't wanna change imports, because we need to resolve and alter them
+                                    //// in the next step
+                                    // if ( // danger: death by regex
+                                    //     source.includes('/')
+                                    //     && ! /^@[^/]+\/[^/]+$/.test(source)
+                                    //     && ! /(.js|.cjs|.mjs|.json)$/.test(source)
+                                    // ) {
+                                    //     if (source.split('/').pop().includes('.')) {
+                                    //         console.log(`babel-plugin-sxy-transform-cjs-to-esm warning:`
+                                    //             + ` require location ${source} file contains a dot, but we did not`
+                                    //             + ` recognise the extension. Adding .js`)
+                                    //     }
+                                    //     source += '.js'
+                                    // }
                                     return t.AwaitExpression(
                                         t.CallExpression(
                                             t.Import(),
